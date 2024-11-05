@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Introduction to ssp.quantreg: Subsampling for Quantile Regression</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+margin-bottom: 0em;
+}
+.hanging div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}
+</style>
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to <code>ssp.quantreg</code>:
+Subsampling for Quantile Regression</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(subsampling)</span></code></pre></div>
+<p>This vignette introduces the usage of <code>ssp.quantreg</code>. The
+statistical theory and algorithms behind this implementation can be
+found in the relevant reference papers.</p>
+<p>Quantile regression aims to estimate conditional quantiles by
+minimizing the following loss function:</p>
+<p><span class="math display">\[
+\min_{\beta} L(\beta) = \frac{1}{N} \sum_{i=1}^{N} \rho_\tau \left( y_i
+- \beta^\top x_i \right) =
+\frac{1}{N} \sum_{i=1}^{N} \left( y_i - \beta^\top x_i \right) \left\{
+\tau - I \left( y_i &lt; \beta^\top x_i \right) \right\},
+\]</span> where <span class="math inline">\(\tau\)</span> is the
+quantile of interest, <span class="math inline">\(y\)</span> is the
+response variable, <span class="math inline">\(x\)</span> is covariates
+vector and <span class="math inline">\(N\)</span> is the number of
+observations in full dataset.</p>
+<p>The idea of subsampling methods is as follows: instead of fitting the
+model on the size <span class="math inline">\(N\)</span> full dataset, a
+subsampling probability is assigned to each observation and a smaller,
+informative subsample is drawn. The model is then fitted on the
+subsample to obtain an estimator with reduced computational cost.</p>
+<div id="terminology" class="section level2">
+<h2>Terminology</h2>
+<ul>
+<li><p>Full dataset: The whole dataset used as input.</p></li>
+<li><p>Full data estimator: The estimator obtained by fitting the model
+on the full dataset.</p></li>
+<li><p>Subsample: A subset of observations drawn from the full
+dataset.</p></li>
+<li><p>Subsample estimator: The estimator obtained by fitting the model
+on the subsample.</p></li>
+<li><p>Subsampling probability (<span class="math inline">\(\pi\)</span>): The probability assigned to each
+observation for inclusion in the subsample.</p></li>
+</ul>
+</div>
+<div id="example" class="section level2">
+<h2>Example</h2>
+<p>We introduce <code>ssp.quantreg</code> with simulated data. <span class="math inline">\(X\)</span> contains <span class="math inline">\(d=6\)</span> covariates drawn from multinormal
+distribution and <span class="math inline">\(Y\)</span> is the response
+variable. The full data size is <span class="math inline">\(N = 1 \times
+10^4\)</span>. The interested quantile <span class="math inline">\(\tau=0.75\)</span>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fl">1e4</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>tau <span class="ot">&lt;-</span> <span class="fl">0.75</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>beta.true <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">7</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">length</span>(beta.true) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>corr  <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>sigmax  <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, d, d)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>d) <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>d) sigmax[i, j] <span class="ot">&lt;-</span> corr<span class="sc">^</span>(<span class="fu">abs</span>(i<span class="sc">-</span>j))</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>X <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(N, <span class="fu">rep</span>(<span class="dv">0</span>, d), sigmax)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>err <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N, <span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">-</span> <span class="fu">qnorm</span>(tau)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>Y <span class="ot">&lt;-</span> beta.true[<span class="dv">1</span>] <span class="sc">+</span> X <span class="sc">%*%</span> beta.true[<span class="sc">-</span><span class="dv">1</span>] <span class="sc">+</span> err <span class="sc">*</span> <span class="fu">rowMeans</span>(<span class="fu">abs</span>(X))</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(Y, X))</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">colnames</span>(data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Y&quot;</span>, <span class="fu">paste</span>(<span class="st">&quot;V&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X), <span class="at">sep=</span><span class="st">&quot;&quot;</span>))</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>formula <span class="ot">&lt;-</span> Y <span class="sc">~</span> .</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="fu">head</span>(data)</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt;            Y         V1          V2          V3         V4         V5</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; 1  3.0813580 -0.1825325 -0.01613791 -0.01852406  1.0672454  0.9353870</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; 2  0.1114953 -0.3829652 -1.20674035 -0.33354934  0.3818526  0.6610612</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; 3  4.0233475 -0.1384141  0.35758454 -0.08962728  0.8591475  0.7554356</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; 4 -7.0116774 -0.7668158 -1.07028901 -2.57374497 -1.4283868 -0.4782146</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; 5 -1.2551700 -0.9557206 -0.82219260  0.47905721  0.1096016 -0.3116279</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; 6  2.6764218  0.8646208 -0.32527175  0.23441106  0.5800169  1.8153229</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt;            V6</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; 1  0.44382164</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt; 2  0.12626628</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt; 3  1.63208199</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; 4  1.10717085</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; 5 -0.08180055</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; 6 -0.03612645</span></span></code></pre></div>
+</div>
+<div id="key-arguments" class="section level2">
+<h2>Key Arguments</h2>
+<p>The function usage is</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">ssp.quantreg</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  formula,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  data,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">subset =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">tau =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  n.plt,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  n.ssp,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">B =</span> <span class="dv">5</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">boot =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">criterion =</span> <span class="st">&quot;optL&quot;</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">sampling.method =</span> <span class="st">&quot;withReplacement&quot;</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">likelihood =</span> <span class="fu">c</span>(<span class="st">&quot;weighted&quot;</span>),</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(...),</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">contrasts =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  ...</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>)</span></code></pre></div>
+<p>The core functionality of <code>ssp.quantreg</code> revolves around
+three key questions:</p>
+<ul>
+<li><p>How are subsampling probabilities computed? (Controlled by the
+<code>criterion</code> argument)</p></li>
+<li><p>How is the subsample drawn? (Controlled by the
+<code>sampling.method</code> argument)</p></li>
+<li><p>How is the likelihood adjusted to correct for bias? (Controlled
+by the <code>likelihood</code> argument)</p></li>
+</ul>
+<div id="criterion" class="section level3">
+<h3><code>criterion</code></h3>
+<p><code>criterion</code> stands for the criterion we choose to compute
+the sampling probability for each observation. The choices of
+<code>criterion</code> include <code>optL</code>(default) and
+<code>uniform</code>. In <code>optL</code>, the optimal subsampling
+probability is by minimizing a transformation of the asymptotic variance
+of subsample estimator. <code>uniform</code> is a baseline method.</p>
+</div>
+<div id="sampling.method" class="section level3">
+<h3><code>sampling.method</code></h3>
+<p>The options for the <code>sampling.method</code> argument include
+<code>withReplacement</code> (default) and <code>poisson</code>.
+<code>withReplacement</code> stands for drawing <span class="math inline">\(n.ssp\)</span> subsamples from full dataset with
+replacement, using the specified subsampling probabilities.
+<code>poisson</code> stands for drawing subsamples one by one by
+comparing the subsampling probability with a realization of uniform
+random variable <span class="math inline">\(U(0,1)\)</span>. The
+expected number of drawn samples are <span class="math inline">\(n.ssp\)</span>.</p>
+</div>
+<div id="likelihood" class="section level3">
+<h3><code>likelihood</code></h3>
+<p>The available choice for <code>likelihood</code> in
+<code>ssp.quantreg</code> is <code>weighted</code>. It takes the inverse
+of sampling probabblity as the weights in likelihood function to correct
+the bias introduced by unequal subsampling probabilities.</p>
+</div>
+<div id="boot-and-b" class="section level3">
+<h3><code>boot</code> and <code>B</code></h3>
+<p>An option for drawing <span class="math inline">\(B\)</span>
+subsamples (each with expected size <code>n.ssp</code>) and deriving
+subsample estimator and asymptotic covariance matrix based on them.
+After getting <span class="math inline">\(\hat{\beta}_{b}\)</span> on
+the <span class="math inline">\(b\)</span>-th subsample, <span class="math inline">\(b=1,\dots B\)</span>, it calculates</p>
+<p><span class="math display">\[
+\hat{\beta}_I = \frac{1}{B} \sum_{b=1}^{B} \hat{\beta}_{b}
+\]</span> as the final subsample estimator and <span class="math display">\[
+\hat{V}(\hat{\beta}_I) = \frac{1}{r_{ef} B (B - 1)}
+\sum_{b=1}^{B} \left( \hat{\beta}_{b} - \hat{\beta}_I  \right)^{\otimes
+2},
+\]</span> where <span class="math inline">\(r_{ef}\)</span> is a
+correction term for effective subsample size since the observations in
+each subsample can be replicated. For more details, see <span class="citation">Wang and Ma (2021)</span>.</p>
+</div>
+</div>
+<div id="outputs" class="section level2">
+<h2>Outputs</h2>
+<p>After drawing subsample(s), <code>ssp.quantreg</code> utilizes
+<code>quantreg::rq</code> to fit the model on the subsample(s).
+Arguments accepted by <code>quantreg::rq</code> can be passed through
+<code>...</code> in <code>ssp.quantreg</code>.</p>
+<p>Below are two examples demonstrating the use of
+<code>ssp.quantreg</code> with different configurations.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>n.plt <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>n.ssp <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>ssp.results1 <span class="ot">&lt;-</span> <span class="fu">ssp.quantreg</span>(formula, </span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>                             data, </span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>                             <span class="at">tau =</span> tau, </span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>                             <span class="at">n.plt =</span> n.plt,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>                             <span class="at">n.ssp =</span> n.ssp,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>                             <span class="at">B =</span> B, </span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>                             <span class="at">boot =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>                             <span class="at">criterion =</span> <span class="st">&#39;optL&#39;</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>                             <span class="at">sampling.method =</span> <span class="st">&#39;withReplacement&#39;</span>, </span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>                             <span class="at">likelihood =</span> <span class="st">&#39;weighted&#39;</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>                             )</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>ssp.results2 <span class="ot">&lt;-</span> <span class="fu">ssp.quantreg</span>(formula, </span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>                             data, </span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>                             <span class="at">tau =</span> tau, </span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>                             <span class="at">n.plt =</span> n.plt,</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>                             <span class="at">n.ssp =</span> n.ssp,</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>                             <span class="at">B =</span> B, </span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>                             <span class="at">boot =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>                             <span class="at">criterion =</span> <span class="st">&#39;optL&#39;</span>,</span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>                             <span class="at">sampling.method =</span> <span class="st">&#39;withReplacement&#39;</span>, </span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>                             <span class="at">likelihood =</span> <span class="st">&#39;weighted&#39;</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>                             )</span></code></pre></div>
+<div id="returned-object" class="section level3">
+<h3>Returned object</h3>
+<p>The returned object contains estimation results and index of drawn
+subsample in the full dataset.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">names</span>(ssp.results1)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;model.call&quot;            &quot;coef.plt&quot;              &quot;coef&quot;                 </span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; [4] &quot;cov&quot;                   &quot;index.plt&quot;             &quot;index.ssp&quot;            </span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [7] &quot;N&quot;                     &quot;subsample.size.expect&quot; &quot;terms&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">summary</span>(ssp.results1)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; Model Summary</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; ssp.quantreg(formula = formula, data = data, tau = tau, n.plt = n.plt, </span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt;     n.ssp = n.ssp, B = B, boot = TRUE, criterion = &quot;optL&quot;, sampling.method = &quot;withReplacement&quot;, </span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;     likelihood = &quot;weighted&quot;)</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; Subsample Size:</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; [1] 1000</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; Intercept   0.9753     0.0324 30.0654  &lt;0.0001</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; V1          0.9701     0.0220 44.1763  &lt;0.0001</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; V2          1.0295     0.0394 26.1369  &lt;0.0001</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; V3          0.9980     0.0209 47.8506  &lt;0.0001</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; V4          0.9834     0.0609 16.1529  &lt;0.0001</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; V5          1.0508     0.0301 34.8848  &lt;0.0001</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; V6          0.9441     0.0327 28.8878  &lt;0.0001</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">summary</span>(ssp.results2)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; Model Summary</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; ssp.quantreg(formula = formula, data = data, tau = tau, n.plt = n.plt, </span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;     n.ssp = n.ssp, B = B, boot = FALSE, criterion = &quot;optL&quot;, sampling.method = &quot;withReplacement&quot;, </span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt;     likelihood = &quot;weighted&quot;)</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; Subsample Size:</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; [1] 1000</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;           Estimate</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; Intercept   0.9510</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; V1          1.0234</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; V2          1.0562</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; V3          1.0221</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; V4          0.9676</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; V5          0.9698</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; V6          1.0445</span></span></code></pre></div>
+<p>Some key returned variables:</p>
+<ul>
+<li><p><code>index.plt</code> and <code>index</code> are the row indices
+of drawn pilot subsamples and optimal subsamples in the full
+data.</p></li>
+<li><p><code>coef.ssp</code> is the subsample estimator for <span class="math inline">\(\beta\)</span> and <code>coef</code> is the linear
+combination of <code>coef.plt</code> (pilot estimator) and
+<code>coef.ssp</code>.</p></li>
+<li><p><code>cov.ssp</code> and <code>cov</code> are estimated
+covariance matrices of <code>coef.ssp</code> and <code>coef</code>. If
+<code>boot=FALSE</code>, covariance matrix would not be estimated and a
+size <code>n.ssp * B</code> subsample would be drawn.</p></li>
+</ul>
+<p>See the help documentation of <code>ssp.quantreg</code> for
+details.</p>
+</div>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2 class="unnumbered">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="ref-wang2021optimal" class="csl-entry">
+Wang, Haiying, and Yanyuan Ma. 2021. <span>“Optimal Subsampling for
+Quantile Regression in Big Data.”</span> <em>Biometrika</em> 108 (1):
+99–112.
+</div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Introduction to ssp.softmax: Subsampling for Softmax (Multinomial) Regression Model</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+margin-bottom: 0em;
+}
+.hanging div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}
+</style>
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to <code>ssp.softmax</code>:
+Subsampling for Softmax (Multinomial) Regression Model</h1>
+
+
+
+<p>This vignette introduces the usage of <code>ssp.softmax</code>, which
+draws optimal subsample from full data and fit softmax (multinomial)
+regression on the subsample. The statistical theory and algorithms in
+this implementation can be found in the relevant reference papers.</p>
+<p>Denote <span class="math inline">\(y\)</span> as multi-category
+response variable and <span class="math inline">\(K+1\)</span> is the
+number of categories. <span class="math inline">\(N\)</span> is the
+number of observations in the full dataset. <span class="math inline">\(X\)</span> is the <span class="math inline">\(N
+\times d\)</span> covariates matrix. Softmax regression model assumes
+that <span class="math display">\[
+P(y_{i,k} = 1 \mid \mathbf{x}_i) = \frac{\exp(\mathbf{x}_i^\top
+\boldsymbol{\beta}_k)}{\sum_{l=0}^{K} \exp(\mathbf{x}_i^\top
+\boldsymbol{\beta}_l)}
+\]</span> for <span class="math inline">\(i = 1, \ldots, N\)</span> and
+<span class="math inline">\(k = 0, 1, \ldots, K\)</span>, where <span class="math inline">\(\boldsymbol{\beta}_k\)</span>’s are <span class="math inline">\(d\)</span>-dimensional unknown coefficients.</p>
+<p>The log-likelihood function of softmax regression is</p>
+<p><span class="math display">\[
+\max_{\beta} L(\beta) = \frac{1}{N} \sum_{i=1}^{N} \left[ \sum_{k=0}^{K}
+y_{i,k}
+\mathbf{x}_i^\top \boldsymbol{\beta}_k - \ln \left\{ \sum_{l=0}^{K}
+\exp(\mathbf{x}_i^\top \boldsymbol{\beta}_l) \right\} \right].
+\]</span></p>
+<p>The idea of subsampling methods is as follows: instead of fitting the
+model on the size <span class="math inline">\(N\)</span> full dataset, a
+subsampling probability is assigned to each observation and a smaller,
+informative subsample is drawn. The model is then fitted on the
+subsample to obtain an estimator with reduced computational cost.</p>
+<div id="terminology" class="section level2">
+<h2>Terminology</h2>
+<ul>
+<li><p>Full dataset: The whole dataset used as input.</p></li>
+<li><p>Full data estimator: The estimator obtained by fitting the model
+on the full dataset.</p></li>
+<li><p>Subsample: A subset of observations drawn from the full
+dataset.</p></li>
+<li><p>Subsample estimator: The estimator obtained by fitting the model
+on the subsample.</p></li>
+<li><p>Subsampling probability (<span class="math inline">\(\pi\)</span>): The probability assigned to each
+observation for inclusion in the subsample.</p></li>
+</ul>
+</div>
+<div id="example" class="section level2">
+<h2>Example</h2>
+<p>We introduce the usage of <code>ssp.softmax</code> with simulated
+data. <span class="math inline">\(X\)</span> contains <span class="math inline">\(d=3\)</span> covariates drawn from multinormal
+distribution and <span class="math inline">\(Y\)</span> is the
+multicategory response variable with <span class="math inline">\(K+1=3\)</span> categories. The full data size is
+<span class="math inline">\(N = 1 \times
+10^4\)</span>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(subsampling)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>G <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">rep</span>(<span class="sc">-</span><span class="dv">1</span><span class="sc">/</span>(K<span class="sc">+</span><span class="dv">1</span>), K), <span class="fu">diag</span>(K) <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span>(K<span class="sc">+</span><span class="dv">1</span>)) <span class="sc">%x%</span> <span class="fu">diag</span>(d)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fl">1e4</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>beta.true.baseline <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">rep</span>(<span class="dv">0</span>, d), <span class="fu">matrix</span>(<span class="sc">-</span><span class="fl">1.5</span>, d, K))</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>beta.true.summation <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">rep</span>(<span class="dv">1</span>, d), <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">matrix</span>(<span class="sc">-</span><span class="dv">1</span>, d, K))</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, d)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fl">0.5</span>, <span class="at">nrow =</span> d, <span class="at">ncol =</span> d)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">diag</span>(sigma) <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, d)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>X <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(N, mu, sigma)</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>prob <span class="ot">&lt;-</span> <span class="fu">exp</span>(X <span class="sc">%*%</span> beta.true.summation)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>prob <span class="ot">&lt;-</span> prob <span class="sc">/</span> <span class="fu">rowSums</span>(prob)</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">apply</span>(prob, <span class="dv">1</span>, <span class="cf">function</span>(row) <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span>K, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> row))</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(Y, X))</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="fu">colnames</span>(data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Y&quot;</span>, <span class="fu">paste</span>(<span class="st">&quot;V&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X), <span class="at">sep=</span><span class="st">&quot;&quot;</span>))</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="fu">head</span>(data)</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt;   Y         V1          V2         V3</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; 1 2 -0.3756189 -0.17727086 -0.9816025</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; 2 2  0.2912939  0.60753208 -0.4489936</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; 3 2 -1.0530547  0.02079337 -1.0146024</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; 4 0  0.1854791  2.45385260  1.2682922</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; 5 0  0.8687332  0.21941612 -0.2810234</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; 6 1 -0.8336174 -0.32556141 -0.8505501</span></span></code></pre></div>
+</div>
+<div id="key-arguments" class="section level2">
+<h2>Key Arguments</h2>
+<p>The function usage is</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">ssp.softmax</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  formula,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  data,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  subset,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  n.plt,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  n.ssp,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">criterion =</span> <span class="st">&quot;MSPE&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">sampling.method =</span> <span class="st">&quot;poisson&quot;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">likelihood =</span> <span class="st">&quot;MSCLE&quot;</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">constraint =</span> <span class="st">&quot;summation&quot;</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(...),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">contrasts =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  ...</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>)</span></code></pre></div>
+<p>The core functionality of <code>ssp.softmax</code> revolves around
+three key questions:</p>
+<ul>
+<li><p>How are subsampling probabilities computed? (Controlled by the
+<code>criterion</code> argument)</p></li>
+<li><p>How is the subsample drawn? (Controlled by the
+<code>sampling.method</code> argument)</p></li>
+<li><p>How is the likelihood adjusted to correct for bias? (Controlled
+by the <code>likelihood</code> argument)</p></li>
+</ul>
+<div id="criterion" class="section level3">
+<h3><code>criterion</code></h3>
+<p>The choices of <code>criterion</code> include <code>optA</code>,
+<code>optL</code>, ,<code>MSPE</code>(default), <code>LUC</code> and
+<code>uniform</code>. The default criterion <code>MSPE</code> minimizes
+the mean squared prediction error between subsample estimator and full
+data estimator. Criterion <code>optA</code> and <code>optL</code> are
+derived by minimizing the asymptotic covariance of subsample estimator.
+<code>LUC</code> and <code>uniform</code> are baseline methods. See
+<span class="citation">Yao, Zou, and Wang (2023)</span> and <span class="citation">Wang and Kim (2022)</span> for details.</p>
+</div>
+<div id="sampling.method" class="section level3">
+<h3><code>sampling.method</code></h3>
+<p>The options for <code>sampling.method</code> include
+<code>withReplacement</code> and <code>poisson</code> (default).
+<code>withReplacement.</code> stands for drawing <span class="math inline">\(n.ssp\)</span> subsamples from full dataset with
+replacement, using the specified subsampling probability.
+<code>poisson</code> stands for drawing subsamples one by one by
+comparing the subsampling probability with a realization of uniform
+random variable <span class="math inline">\(U(0,1)\)</span>. The
+expected number of drawed samples are <span class="math inline">\(n.ssp\)</span>.</p>
+</div>
+<div id="likelihood" class="section level3">
+<h3><code>likelihood</code></h3>
+<p>The available choices for <code>likelihood</code> include
+<code>weighted</code> and <code>MSCLE</code>(default).
+<code>MSCLE</code> stands for maximum sampled conditional likelihood.
+Both of these likelihood functions can derive an unbiased optimal
+subsample estimator. See <span class="citation">Wang and Kim
+(2022)</span> for details about <code>MSCLE</code>.</p>
+</div>
+<div id="constraint" class="section level3">
+<h3><code>constraint</code></h3>
+<p>Softmax model needs constraint on unknown coefficients for
+identifiability. The options for <code>constraint</code> include
+<code>summation</code> and <code>baseline</code> (default). The baseline
+constraint assumes the coefficient for the baseline category are <span class="math inline">\(0\)</span>. Without loss of generality,
+<code>ssp.softmax</code> sets the category <span class="math inline">\(Y=0\)</span> as the baseline category so that
+<span class="math inline">\(\boldsymbol{\beta}_0=0\)</span>. The
+summation constraint <span class="math inline">\(\sum_{k=0}^{K}
+\boldsymbol{\beta}_k\)</span> can also used in the subsampling method
+for the purpose of calculating optimal subsampling probability. These
+two constraints lead to different interpretation of coefficients but are
+equal for computing <span class="math inline">\(P(y_{i,k} = 1 \mid
+\mathbf{x}_i)\)</span>. The estimation of coefficients returned by
+<code>ssp.softmax()</code> is under baseline constraint.</p>
+</div>
+</div>
+<div id="outputs" class="section level2">
+<h2>Outputs</h2>
+<p>After drawing subsample, <code>ssp.softmax</code> utilizes
+<code>nnet::multinom</code> to fit the model on the subsample. Arguments
+accepted by <code>nnet::multinom</code> can be passed through
+<code>...</code> in <code>ssp.softmax</code>.</p>
+<p>Below are two examples demonstrating the use of
+<code>ssp.softmax</code> with different configurations.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>n.plt <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>n.ssp <span class="ot">&lt;-</span> <span class="dv">600</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>formula <span class="ot">&lt;-</span> Y <span class="sc">~</span> . <span class="sc">-</span><span class="dv">1</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>ssp.results1 <span class="ot">&lt;-</span> <span class="fu">ssp.softmax</span>(<span class="at">formula =</span> formula,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>                            <span class="at">data =</span> data,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>                            <span class="at">n.plt =</span> n.plt,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>                            <span class="at">n.ssp =</span> n.ssp,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>                            <span class="at">criterion =</span> <span class="st">&#39;MSPE&#39;</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>                            <span class="at">sampling.method =</span> <span class="st">&#39;withReplacement&#39;</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>                            <span class="at">likelihood =</span> <span class="st">&#39;weighted&#39;</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>                            <span class="at">constraint =</span> <span class="st">&#39;baseline&#39;</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>                            )</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Message from nnet::multinom: &quot;</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; # weights:  12 (6 variable)</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; initial  value 219.722458 </span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; iter  10 value 143.304799</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; final  value 143.304778 </span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; converged</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Message from nnet::multinom: &quot;</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; # weights:  12 (6 variable)</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; initial  value 5789394.068697 </span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; iter  10 value 4219770.981211</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; final  value 4219003.340996 </span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; converged</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="fu">summary</span>(ssp.results1)</span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; Model Summary</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; ssp.softmax(formula = formula, data = data, n.plt = n.plt, n.ssp = n.ssp, </span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt;     criterion = &quot;MSPE&quot;, sampling.method = &quot;withReplacement&quot;, </span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt;     likelihood = &quot;weighted&quot;, constraint = &quot;baseline&quot;)</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt; Subsample Size:</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt;                                </span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt; 1       Total Sample Size 10000</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; 2 Expected Subsample Size   600</span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; 3   Actual Subsample Size   600</span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt; 4   Unique Subsample Size   563</span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt; 5  Expected Subample Rate    6%</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt; 6    Actual Subample Rate    6%</span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; 7    Unique Subample Rate 5.63%</span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a><span class="co">#&gt;         [,1]      [,2]</span></span>
+<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a><span class="co">#&gt; V1 -1.175907 -1.281935</span></span>
+<span id="cb4-49"><a href="#cb4-49" tabindex="-1"></a><span class="co">#&gt; V2 -1.619482 -1.502412</span></span>
+<span id="cb4-50"><a href="#cb4-50" tabindex="-1"></a><span class="co">#&gt; V3 -1.231662 -1.414723</span></span>
+<span id="cb4-51"><a href="#cb4-51" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-52"><a href="#cb4-52" tabindex="-1"></a><span class="co">#&gt; Std. Errors:</span></span>
+<span id="cb4-53"><a href="#cb4-53" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-54"><a href="#cb4-54" tabindex="-1"></a><span class="co">#&gt;         [,1]      [,2]</span></span>
+<span id="cb4-55"><a href="#cb4-55" tabindex="-1"></a><span class="co">#&gt; V1 0.1457377 0.1459830</span></span>
+<span id="cb4-56"><a href="#cb4-56" tabindex="-1"></a><span class="co">#&gt; V2 0.1442445 0.1461619</span></span>
+<span id="cb4-57"><a href="#cb4-57" tabindex="-1"></a><span class="co">#&gt; V3 0.1498036 0.1492071</span></span></code></pre></div>
+<p><code>summary(ssp.results1)</code> shows that it draws 600
+observations out of 10000, where the number of unique indices is less
+than 600 since we use <code>sampling.method = &#39;withReplacement&#39;</code>.
+After fitting softmax model on subsample using the choosen
+<code>weighted</code> likelihood function, we get coefficients
+estimation and standard errors as above.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>ssp.results2 <span class="ot">&lt;-</span> <span class="fu">ssp.softmax</span>(<span class="at">formula =</span> formula,</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                            <span class="at">data =</span> data,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>                            <span class="at">n.plt =</span> n.plt,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>                            <span class="at">n.ssp =</span> n.ssp,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>                            <span class="at">criterion =</span> <span class="st">&#39;MSPE&#39;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>                            <span class="at">sampling.method =</span> <span class="st">&#39;poisson&#39;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>                            <span class="at">likelihood =</span> <span class="st">&#39;MSCLE&#39;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>                            <span class="at">constraint =</span> <span class="st">&#39;baseline&#39;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>                            )</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Message from nnet::multinom: &quot;</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; # weights:  12 (6 variable)</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; initial  value 219.722458 </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; iter  10 value 126.651711</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; final  value 126.637171 </span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; converged</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Message from nnet::multinom: &quot;</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; # weights:  21 (6 variable)</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; initial  value 908.207717 </span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; iter  10 value 651.150361</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; final  value 650.943777 </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; converged</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="fu">summary</span>(ssp.results2)</span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; Model Summary</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; ssp.softmax(formula = formula, data = data, n.plt = n.plt, n.ssp = n.ssp, </span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt;     criterion = &quot;MSPE&quot;, sampling.method = &quot;poisson&quot;, likelihood = &quot;MSCLE&quot;, </span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt;     constraint = &quot;baseline&quot;)</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; Subsample Size:</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt;                                </span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; 1       Total Sample Size 10000</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; 2 Expected Subsample Size   600</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; 3   Actual Subsample Size   702</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; 4   Unique Subsample Size   702</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; 5  Expected Subample Rate    6%</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; 6    Actual Subample Rate 7.02%</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; 7    Unique Subample Rate 7.02%</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt;         [,1]      [,2]</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; V1 -1.450790 -1.434135</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt; V2 -1.764387 -1.726621</span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; V3 -1.448671 -1.607003</span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; Std. Errors:</span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt;         [,1]      [,2]</span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; V1 0.1314360 0.1353568</span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt; V2 0.1441155 0.1413029</span></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; V3 0.1389344 0.1411973</span></span></code></pre></div>
+<p>The returned object contains estimation results and index of drawn
+subsamples in the full dataset.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">names</span>(ssp.results1)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;model.call&quot;            &quot;coef.plt&quot;              &quot;coef.ssp&quot;             </span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;coef&quot;                  &quot;coef.plt.sum&quot;          &quot;coef.ssp.sum&quot;         </span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;coef.sum&quot;              &quot;cov.plt&quot;               &quot;cov.ssp&quot;              </span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; [10] &quot;cov&quot;                   &quot;cov.plt.sum&quot;           &quot;cov.sum&quot;              </span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; [13] &quot;cov.ssp.sum&quot;           &quot;index.plt&quot;             &quot;index.ssp&quot;            </span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; [16] &quot;N&quot;                     &quot;subsample.size.expect&quot; &quot;terms&quot;</span></span></code></pre></div>
+<p>Some key returned variables:</p>
+<ul>
+<li><p><code>index.plt</code> and <code>index</code> are the row indices
+of drawn pilot subsamples and optimal subsamples in the full
+data.</p></li>
+<li><p><code>coef.ssp</code> is the subsample estimator for <span class="math inline">\(\beta\)</span> and <code>coef</code> is the linear
+combination of <code>coef.plt</code> (pilot estimator) and
+<code>coef.ssp</code>.</p></li>
+<li><p><code>cov.ssp</code> and <code>cov</code> are estimated
+covariance matrices of <code>coef.ssp</code> and
+<code>coef</code>.</p></li>
+</ul>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2 class="unnumbered">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="ref-wang2022maximum" class="csl-entry">
+Wang, HaiYing, and Jae Kwang Kim. 2022. <span>“Maximum Sampled
+Conditional Likelihood for Informative Subsampling.”</span> <em>Journal
+of Machine Learning Research</em> 23 (332): 1–50.
+</div>
+<div id="ref-yao2023model" class="csl-entry">
+Yao, Yaqiong, Jiahui Zou, and HaiYing Wang. 2023. <span>“Model
+Constraints Independent Optimal Subsampling Probabilities for Softmax
+Regression.”</span> <em>Journal of Statistical Planning and
+Inference</em> 225: 188–201.
+</div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

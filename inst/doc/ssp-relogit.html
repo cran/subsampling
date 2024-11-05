@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Introduction to ssp.relogit: Subsampling for Logistic Regression Model with Rare Events</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+margin-bottom: 0em;
+}
+.hanging div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}
+</style>
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to <code>ssp.relogit</code>:
+Subsampling for Logistic Regression Model with Rare Events</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(subsampling)</span></code></pre></div>
+<p>This vignette introduces the usage of <code>ssp.relogit</code>. The
+statistical theory and algorithms in this implementation can be found in
+relevant reference papers.</p>
+<p>The logistic regression log-likelihood function is</p>
+<p><span class="math display">\[
+\max_{\beta} L(\beta) = \frac{1}{N} \sum_{i=1}^N \left[y_i \beta^{\top}
+x_i -
+\log\left(1 + e^{\beta^\top x_i}\right) \right].
+\]</span></p>
+<div id="terminology" class="section level2">
+<h2>Terminology</h2>
+<ul>
+<li><p>Full dataset: The whole dataset used as input.</p></li>
+<li><p>Full data estimator: The estimator obtained by fitting the model
+on the full dataset.</p></li>
+<li><p>Subsample: A subset of observations drawn from the full
+dataset.</p></li>
+<li><p>Subsample estimator: The estimator obtained by fitting the model
+on the subsample.</p></li>
+<li><p>Subsampling probability (<span class="math inline">\(\pi\)</span>): The probability assigned to each
+observation for inclusion in the subsample.</p></li>
+<li><p>Rare events: Observations where <span class="math inline">\(Y=1\)</span> (positive instances).</p></li>
+<li><p>Non-rare events: Observations where <span class="math inline">\(Y=0\)</span> (negative instances).</p></li>
+</ul>
+<p>The idea of subsampling methods is as follows: instead of fitting the
+model on the size <span class="math inline">\(N\)</span> full dataset, a
+subsampling probability is assigned to each observation and a smaller,
+informative subsample is drawn. The model is then fitted on the
+subsample to obtain an estimator with reduced computational cost.</p>
+<p>In the face of logistic regression with rare events, <span class="citation">Wang, Zhang, and Wang (2021)</span> shows that the
+available information ties to the number of positive instances instead
+of the full data size. Based on this insight, one can keep all the rare
+instances and perform subsampling on the non-rare instances to reduce
+the computational cost.</p>
+</div>
+<div id="example" class="section level2">
+<h2>Example</h2>
+<p>We introduce the basic usage by using <code>ssp.relogit</code> with
+simulated data. <span class="math inline">\(X\)</span> contains <span class="math inline">\(d=6\)</span> covariates drawn from multinormal
+distribution and <span class="math inline">\(Y\)</span> is the binary
+response variable. The full data size is <span class="math inline">\(N =
+2 \times 10^4\)</span>. Denote <span class="math inline">\(N_{1}=sum(Y)\)</span> as the counts of rare
+observations and <span class="math inline">\(N_{0} = N - N_{1}\)</span>
+as the counts of non-rare observations.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> <span class="fl">1e4</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>beta0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">6</span>, <span class="sc">-</span><span class="fu">rep</span>(<span class="fl">0.5</span>, <span class="dv">6</span>))</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">length</span>(beta0) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, N, d)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>corr <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>sigmax <span class="ot">&lt;-</span> corr <span class="sc">^</span> <span class="fu">abs</span>(<span class="fu">outer</span>(<span class="dv">1</span><span class="sc">:</span>d, <span class="dv">1</span><span class="sc">:</span>d, <span class="st">&quot;-&quot;</span>))</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>X <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="at">n =</span> N, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, d), <span class="at">Sigma =</span> sigmax)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(N, <span class="dv">1</span>, <span class="dv">1</span> <span class="sc">-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(beta0[<span class="dv">1</span>] <span class="sc">+</span> X <span class="sc">%*%</span> beta0[<span class="sc">-</span><span class="dv">1</span>])))</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&#39;N: &#39;</span>, N))</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; [1] &quot;N:  20000&quot;</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&#39;sum(Y): &#39;</span>, <span class="fu">sum</span>(Y)))</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;sum(Y):  266&quot;</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>n.plt <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>n.ssp <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(Y, X))</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="fu">colnames</span>(data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Y&quot;</span>, <span class="fu">paste</span>(<span class="st">&quot;V&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X), <span class="at">sep=</span><span class="st">&quot;&quot;</span>))</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>formula <span class="ot">&lt;-</span> Y <span class="sc">~</span> .</span></code></pre></div>
+</div>
+<div id="key-arguments" class="section level2">
+<h2>Key Arguments</h2>
+<p>The function usage is</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">ssp.relogit</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  formula,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  data,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">subset =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  n.plt,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  n.ssp,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">criterion =</span> <span class="st">&quot;optL&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">likelihood =</span> <span class="st">&quot;logOddsCorrection&quot;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(...),</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">contrasts =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  ...</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>)</span></code></pre></div>
+<p>The core functionality of <code>ssp.glm</code> revolves around three
+key questions:</p>
+<ul>
+<li><p>How are subsampling probabilities computed? (Controlled by the
+<code>criterion</code> argument)</p></li>
+<li><p>How is the subsample drawn?</p></li>
+<li><p>How is the likelihood adjusted to correct for bias? (Controlled
+by the <code>likelihood</code> argument)</p></li>
+</ul>
+<p>Different from <code>ssp.glm</code> which can choose
+<code>withReplacement</code> and <code>poisson</code> as the option of
+<code>sampling.method</code>, <code>ssp.relogit</code> uses
+<code>poisson</code> as default sampling method. <code>poisson</code>
+stands for drawing subsamples one by one by comparing the subsampling
+probability with a realization of uniform random variable <span class="math inline">\(U(0,1)\)</span>. The actual size of drawn
+subsample is random but the expected size is <span class="math inline">\(n.ssp\)</span>.</p>
+<div id="criterion" class="section level3">
+<h3><code>criterion</code></h3>
+<p>The choices of <code>criterion</code> include <code>optA</code>,
+<code>optL</code>(default), <code>LCC</code> and <code>uniform</code>.
+The optimal subsampling criterion <code>optA</code> and
+<code>optL</code> are derived by minimizing the asymptotic covariance of
+subsample estimator, proposed by <span class="citation">Wang, Zhu, and
+Ma (2018)</span>. <code>LCC</code> and <code>uniform</code> are baseline
+methods.</p>
+<p>Note that for rare observations <span class="math inline">\(Y=1\)</span> in the full data, the sampling
+probabilities are <span class="math inline">\(1\)</span>. For non-rare
+observations, the sampling probabilities depend on the choice of
+<code>criterion</code>.</p>
+</div>
+<div id="likelihood" class="section level3">
+<h3><code>likelihood</code></h3>
+<p>The available choices for <code>likelihood</code> include
+<code>weighted</code> and <code>logOddsCorrection</code>(default). Both
+of these likelihood functions can derive an unbiased estimator.
+Theoretical results indicate that <code>logOddsCorrection</code> is more
+efficient than <code>weighted</code> in the context of rare events
+logistic regression. See @<span class="citation">Wang, Zhang, and Wang
+(2021)</span>.</p>
+</div>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
+<p>After drawing subsample, <code>ssp.relogit</code> utilizes
+<code>survey::svyglm</code> to fit the model on the subsample, which
+eventually uses <code>glm</code>. Arguments accepted by
+<code>svyglm</code> can be passed through <code>...</code> in
+<code>ssp.glm</code>.</p>
+<p>Below is an example demonstrating the use of
+<code>ssp.relogit</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>n.plt <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>n.ssp <span class="ot">&lt;-</span> <span class="dv">600</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>ssp.results <span class="ot">&lt;-</span> <span class="fu">ssp.relogit</span>(<span class="at">formula =</span> formula,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>                           <span class="at">data =</span> data,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>                           <span class="at">n.plt =</span> n.plt,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>                           <span class="at">n.ssp =</span> n.ssp,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>                           <span class="at">criterion =</span> <span class="st">&#39;optA&#39;</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>                           <span class="at">likelihood =</span> <span class="st">&#39;logOddsCorrection&#39;</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>                           )</span></code></pre></div>
+</div>
+<div id="outputs" class="section level2">
+<h2>Outputs</h2>
+<p>The returned object contains estimation results and indices of drawn
+subsample in the full dataset.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">names</span>(ssp.results)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;model.call&quot;            &quot;coef.plt&quot;              &quot;coef.ssp&quot;             </span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;coef&quot;                  &quot;cov.ssp&quot;               &quot;cov&quot;                  </span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;index.plt&quot;             &quot;index&quot;                 &quot;N&quot;                    </span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; [10] &quot;subsample.size.expect&quot; &quot;terms&quot;</span></span></code></pre></div>
+<p>Some key returned variables:</p>
+<ul>
+<li><p><code>index.plt</code> and <code>index</code> are the row indices
+of drawn pilot subsamples and optimal subsamples in the full
+data.</p></li>
+<li><p><code>coef.ssp</code> is the subsample estimator for <span class="math inline">\(\beta\)</span> and <code>coef</code> is the linear
+combination of <code>coef.plt</code> (pilot estimator) and
+<code>coef.ssp</code>.</p></li>
+<li><p><code>cov.ssp</code> and <code>cov</code> are estimated
+covariance matrices of <code>coef.ssp</code> and
+<code>coef</code>.</p></li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">summary</span>(ssp.results)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; Model Summary</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; ssp.relogit(formula = formula, data = data, n.plt = n.plt, n.ssp = n.ssp, </span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt;     criterion = &quot;optA&quot;, likelihood = &quot;logOddsCorrection&quot;)</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; Subsample Size:</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;                                </span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; 1       Total Sample Size 20000</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; 2 Expected Subsample Size   866</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; 3   Actual Subsample Size   886</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; 4   Unique Subsample Size   886</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; 5  Expected Subample Rate 4.33%</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; 6    Actual Subample Rate 4.43%</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; 7    Unique Subample Rate 4.43%</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error  z value Pr(&gt;|z|)</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Intercept  -5.7329     0.1410 -40.6603  &lt;0.0001</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; V1         -0.4249     0.0895  -4.7460  &lt;0.0001</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; V2         -0.5991     0.1014  -5.9098  &lt;0.0001</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; V3         -0.3641     0.1030  -3.5336   0.0004</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; V4         -0.5157     0.0972  -5.3076  &lt;0.0001</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; V5         -0.4974     0.1032  -4.8182  &lt;0.0001</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; V6         -0.5034     0.0848  -5.9376  &lt;0.0001</span></span></code></pre></div>
+<p>In the printed results, <code>Expected Subsample Size</code> is the
+sum of rare event counts (<span class="math inline">\(N_{1}\)</span>)
+and the expected size of negative subsample drawn from <span class="math inline">\(N_{0}\)</span> non-rare observations.
+<code>Actual Subsample Size</code> is the sum of <span class="math inline">\(N_{1}\)</span> and the actual size of negative
+subsample from <span class="math inline">\(N_{0}\)</span> non-rare
+observations.</p>
+<p>The coefficients and standard errors printed by
+<code>summary()</code> are <code>coef</code> and the square root of
+<code>diag(cov)</code>.</p>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2 class="unnumbered">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="ref-wang2021nonuniform" class="csl-entry">
+Wang, HaiYing, Aonan Zhang, and Chong Wang. 2021. <span>“Nonuniform
+Negative Sampling and Log Odds Correction with Rare Events Data.”</span>
+<em>Advances in Neural Information Processing Systems</em> 34: 19847–59.
+</div>
+<div id="ref-wang2018optimal" class="csl-entry">
+Wang, HaiYing, Rong Zhu, and Ping Ma. 2018. <span>“Optimal Subsampling
+for Large Sample Logistic Regression.”</span> <em>Journal of the
+American Statistical Association</em> 113 (522): 829–44.
+</div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
