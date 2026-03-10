@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>ssp.glm.rF: Balanced Subsampling for Preserving Rare Features in Generalized Linear Models</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore"><code>ssp.glm.rF</code>: Balanced
+Subsampling for Preserving Rare Features in Generalized Linear
+Models</h1>
+
+
+
+<p>This vignette illustrates how to use <code>ssp.glm.rF</code> for
+logistic regression with rare features. We focus on the practical usage
+of the function; additional statistical theory and algorithmic details
+will be released in a forthcoming paper.</p>
+<div id="installation" class="section level2">
+<h2>Installation</h2>
+<p>You can install the development version of <code>subsampling</code>
+from <a href="https://github.com/">GitHub</a> with:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># install.packages(&quot;devtools&quot;)</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;dqksnow/Subsampling&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(subsampling)</span></code></pre></div>
+</div>
+<div id="example-logistic-regression-with-simulated-data-containing-rare-features" class="section level2">
+<h2>Example: Logistic Regression with Simulated Data Containing Rare
+Features</h2>
+<p>We introduce the usage of <code>ssp.glm.RF</code> using simulated
+data. The covariate matrix <span class="math inline">\(X\)</span>
+contains <span class="math inline">\(d=5\)</span> variables: three
+independent rare binary features <span class="math inline">\(Z\)</span>
+with probabilities <code>p_rare</code>; two non-rare features jointly
+normally distributed. The full dataset size is <span class="math inline">\(N = 1 \times 10^4\)</span>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fl">1e4</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>d_rare <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>d_cont <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>p_rare <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.05</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>beta0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fu">rep</span>(<span class="fl">0.5</span>, d_rare), <span class="fu">rep</span>(<span class="fl">0.5</span>, d_cont)) </span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>corr <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>sigmax  <span class="ot">&lt;-</span> <span class="fu">matrix</span>(corr, d_cont, d_cont) <span class="sc">+</span> <span class="fu">diag</span>(<span class="dv">1</span><span class="sc">-</span>corr, d_cont)</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>X <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(N, <span class="fu">rep</span>(<span class="dv">0</span>, d_cont), sigmax)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>Z <span class="ot">&lt;-</span> <span class="fu">do.call</span>(cbind, <span class="fu">lapply</span>(<span class="fu">seq_along</span>(p_rare), <span class="cf">function</span>(i) {</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="fu">rbinom</span>(N, <span class="dv">1</span>, p_rare[i])</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>}))</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(Z, X)</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>P <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>(beta0[<span class="dv">1</span>] <span class="sc">+</span> X <span class="sc">%*%</span> beta0[<span class="sc">-</span><span class="dv">1</span>])))</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">rbinom</span>(N, <span class="dv">1</span>, P))</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;X&quot;</span>, <span class="dv">1</span><span class="sc">:</span>(d_rare <span class="sc">+</span> d_cont))</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>rareFeature.index <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>d_rare)</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Y =</span> Y, X)</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>formula <span class="ot">&lt;-</span> Y <span class="sc">~</span> .</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="fu">head</span>(data)</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;   Y X1 X2 X3         X4         X5</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; 1 0  0  0  1 -1.4469846 -0.1065169</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; 2 0  0  0  1  0.7179401 -0.3977719</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; 3 1  0  0  0  0.6218452  2.1283836</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; 4 0  0  0  0 -0.1739511 -1.7839170</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; 5 1  0  0  0 -0.5609966  0.4219965</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; 6 1  1  0  0  0.3786550 -0.1492964</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="fu">summary</span>(data)</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;        Y                X1               X2               X3        </span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;  Min.   :0.0000   Min.   :0.0000   Min.   :0.0000   Min.   :0.0000  </span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.0000  </span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;  Median :1.0000   Median :0.0000   Median :0.0000   Median :0.0000  </span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt;  Mean   :0.6136   Mean   :0.0095   Mean   :0.0191   Mean   :0.0499  </span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:1.0000   3rd Qu.:0.0000   3rd Qu.:0.0000   3rd Qu.:0.0000  </span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt;  Max.   :1.0000   Max.   :1.0000   Max.   :1.0000   Max.   :1.0000  </span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt;        X4                  X5           </span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt;  Min.   :-3.810962   Min.   :-4.025550  </span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:-0.670567   1st Qu.:-0.662755  </span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt;  Median : 0.019920   Median :-0.002225  </span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt;  Mean   : 0.009841   Mean   : 0.009267  </span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 0.691971   3rd Qu.: 0.706946  </span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt;  Max.   : 3.701031   Max.   : 3.416948</span></span></code></pre></div>
+</div>
+<div id="key-arguments" class="section level2">
+<h2>Key Arguments</h2>
+<p>The main function interface is</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">ssp.glm.rF</span>(formula,</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>           data,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>           <span class="at">subset =</span> <span class="cn">NULL</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>           n.plt,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>           n.ssp,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>           <span class="at">family =</span> <span class="st">&#39;binomial&#39;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>           <span class="at">criterion =</span> <span class="st">&#39;BL-Uni&#39;</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>           <span class="at">sampling.method =</span> <span class="st">&#39;poisson&#39;</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>           <span class="at">likelihood =</span> <span class="st">&#39;weighted&#39;</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>           <span class="at">balance.plt =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>           <span class="at">balance.Y =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>           <span class="at">rareFeature.index =</span> <span class="cn">NULL</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>           <span class="at">control =</span> <span class="fu">list</span>(...),</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>           <span class="at">contrasts =</span> <span class="cn">NULL</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>           ...</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>           ) </span></code></pre></div>
+<p>The idea of subsampling is to draw a size <span class="math inline">\(n \ll N\)</span> subsample and fit the model on
+it. The subsampling probabilities depend on the chosen method. For a
+general background of subsampling, refer to the documentation of
+<code>ssp.glm</code>. The function <code>ssp.glm.rF</code> extends
+<code>ssp.glm</code> to address the rare feature problem, where some
+binary features take the value 1 infrequently.</p>
+<p>Why rare features require special treatment? A rare feature is a
+Bernoulli-distributed covariate <span class="math inline">\(Z\)</span>
+with a low probability of being <span class="math inline">\(1\)</span>.
+In a large-scale dataset, its frequency <span class="math inline">\(N_{\cdot 1} = \sum_{i=1}^{N}Z_i \ll N\)</span>.
+The key challenge is that the estimator of the coefficient for a rare
+feature converges at rate <span class="math inline">\(O(1/N_{\cdot
+1})\)</span> rather than <span class="math inline">\(O(1/N)\)</span>. In
+other words, the accuracy for a rare feature’s coefficient estimation
+depends directly on the number of <span class="math inline">\(Z=1\)</span> cases in the dataset. It implicates
+that a good subsampling method should assign higher sampling
+probabilities to observations with rare feature expressions. Classical
+criterion to compute sampling probabilities such as <code>Uni</code> and
+<code>Lopt</code> cannot sufficiently upweight those rare observations.
+<code>Aopt</code> can upweight them but replies heavily on the quality
+of the pilot estimator.</p>
+<p>To address this issue, <code>ssp.glm.rF</code> incorporates the
+balance score <span class="math inline">\(b(Z)\)</span>. For the <span class="math inline">\(i\)</span>-th observation, it is defined as: <span class="math display">\[
+  b(Z_i) = \sum_{j=1}^{d_{r}} \frac{\left|
+  Z_{ij} - \bar{Z}_{\cdot j}\right|}{\bar{Z}_{\cdot j}},
+\]</span> where <span class="math inline">\(\bar{Z}_{\cdot j} = N_{\cdot
+j} / N\)</span> is the mean of the <span class="math inline">\(j\)</span>-th rare feature in the full dataset,
+and <span class="math inline">\(d_r\)</span> is the dimension of rare
+features. The balance score upweights observations that contain
+expressed rare features and aggregates contributions when multiple rare
+features occur together. Furthermore, it does not rely on unknown model
+parameters, thus does not require a pilot estimator.</p>
+<p>In the function, <code>criterion=&#39;BL-Uni&#39;</code> uses sampling
+probabilities proportional to the balance score.
+<code>criterion = &quot;R-Lopt&quot;</code>extends L-optimality so that it also
+accounts for rarity, albeit requires a pilot estimator. If
+<code>balance.plt = TRUE</code>, the pilot sample is drawn using
+<code>&quot;BL-Uni&quot;</code>, which is important because an unstable pilot
+harms <code>&quot;Aopt&quot;</code>, <code>&quot;Lopt&quot;</code>, or <code>&quot;R-Lopt&quot;</code>
+performance. <code>rareFeature.index</code> must specify which columns
+of the design matrix correspond to rare features.</p>
+</div>
+<div id="outputs" class="section level2">
+<h2>Outputs</h2>
+<p>Below are two examples demonstrating the use of <code>ssp.glm</code>
+with different configurations.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>n.plt <span class="ot">&lt;-</span> <span class="dv">300</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>n.ssp <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>BL.Uni.results <span class="ot">&lt;-</span> <span class="fu">ssp.glm.rF</span>(<span class="at">formula =</span> formula, </span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="at">data =</span> data, </span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="at">n.plt =</span> n.plt,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="at">n.ssp =</span> n.ssp,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="at">family =</span> <span class="st">&#39;quasibinomial&#39;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="at">criterion =</span> <span class="st">&#39;BL-Uni&#39;</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="at">sampling.method =</span> <span class="st">&#39;poisson&#39;</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="at">likelihood =</span> <span class="st">&#39;weighted&#39;</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="at">balance.plt =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="at">balance.Y =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="at">rareFeature.index =</span> rareFeature.index</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>)</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="fu">summary</span>(BL.Uni.results)</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; Model Summary</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; ssp.glm.rF(formula = formula, data = data, n.plt = n.plt, n.ssp = n.ssp, </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt;     family = &quot;quasibinomial&quot;, criterion = &quot;BL-Uni&quot;, sampling.method = &quot;poisson&quot;, </span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt;     likelihood = &quot;weighted&quot;, balance.plt = TRUE, balance.Y = FALSE, </span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt;     rareFeature.index = rareFeature.index)</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; Subsample Summary:</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt;                 Variable  Value</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt;        Total Sample Size  10000</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt;  Expected Subsample Size   2000</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt;    Actual Subsample Size   1964</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt;    Unique Subsample Size   1964</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt;  Expected Subsample Rate    20%</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt;    Actual Subsample Rate 19.64%</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt;    Unique Subsample Rate 19.64%</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; Rare Features Summary (pilot, subsample, full):</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt;                X1      X2      X3      </span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; size_pilot     &quot;1964&quot;  &quot;1964&quot;  &quot;1964&quot;  </span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; count1_pilot   &quot;95&quot;    &quot;191&quot;   &quot;471&quot;   </span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; prop_pilot     &quot;4.84%&quot; &quot;9.73%&quot; &quot;23.98%&quot;</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; coverage_pilot &quot;100%&quot;  &quot;100%&quot;  &quot;94.39%&quot;</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt;                &quot;&quot;      &quot;&quot;      &quot;&quot;      </span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; size_subsample &quot;1964&quot;  &quot;1964&quot;  &quot;1964&quot;  </span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; count1_ssp     &quot;95&quot;    &quot;191&quot;   &quot;471&quot;   </span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; prop_ssp       &quot;4.84%&quot; &quot;9.73%&quot; &quot;23.98%&quot;</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; coverage_ssp   &quot;100%&quot;  &quot;100%&quot;  &quot;94.39%&quot;</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt;                &quot;&quot;      &quot;&quot;      &quot;&quot;      </span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; size_full      &quot;10000&quot; &quot;10000&quot; &quot;10000&quot; </span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; count1_full    &quot;95&quot;    &quot;191&quot;   &quot;499&quot;   </span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; rare_rate      &quot;0.95%&quot; &quot;1.91%&quot; &quot;4.99%&quot; </span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; Intercept   0.4777     0.0639  7.4734  &lt;0.0001</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="co">#&gt; X1          0.6419     0.2570  2.4972   0.0125</span></span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="co">#&gt; X2          0.6119     0.1899  3.2227   0.0013</span></span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="co">#&gt; X3          0.5804     0.1253  4.6306  &lt;0.0001</span></span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="co">#&gt; X4          0.5596     0.0705  7.9369  &lt;0.0001</span></span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; X5          0.4629     0.0666  6.9560  &lt;0.0001</span></span></code></pre></div>
+<p>The <code>Subsample Summary</code> reports the distribution of the
+three rare features in the pilot sample, the subsample, and the full
+dataset. When <code>&quot;BL-Uni&quot;</code> or <code>Uni</code> criterion is
+used, the pilot sample and the subsample return the same results. The
+value <code>size_subsample</code> corresponds to the realized subsample
+size. The value <code>count1_ssp</code> represents the number of
+observations with <span class="math inline">\(X1=1\)</span> in the
+subsample. Here, 95 out of 1964 observations (4.7%). The corresponding
+<code>coverage_ssp</code> = 100% indicates that all 95 rare cases for
+<span class="math inline">\(X1=1\)</span> in the full dataset are
+included in the subsample. The remaining quantities follow the same
+interpretation as in <code>ssp.glm.</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>R.Lopt.results <span class="ot">&lt;-</span> <span class="fu">ssp.glm.rF</span>(<span class="at">formula =</span> formula, </span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="at">data =</span> data, </span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="at">n.plt =</span> n.plt,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="at">n.ssp =</span> n.ssp,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="at">family =</span> <span class="st">&#39;quasibinomial&#39;</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="at">criterion =</span> <span class="st">&#39;R-Lopt&#39;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="at">sampling.method =</span> <span class="st">&#39;poisson&#39;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="at">likelihood =</span> <span class="st">&#39;weighted&#39;</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="at">balance.plt =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="at">balance.Y =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="at">rareFeature.index =</span> rareFeature.index</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>)</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="fu">summary</span>(R.Lopt.results)</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Model Summary</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; ssp.glm.rF(formula = formula, data = data, n.plt = n.plt, n.ssp = n.ssp, </span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;     family = &quot;quasibinomial&quot;, criterion = &quot;R-Lopt&quot;, sampling.method = &quot;poisson&quot;, </span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;     likelihood = &quot;weighted&quot;, balance.plt = TRUE, balance.Y = FALSE, </span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;     rareFeature.index = rareFeature.index)</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Subsample Summary:</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt;                 Variable  Value</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt;        Total Sample Size  10000</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt;  Expected Subsample Size   2000</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt;    Actual Subsample Size   1935</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt;    Unique Subsample Size   1935</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt;  Expected Subsample Rate    20%</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt;    Actual Subsample Rate 19.35%</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt;    Unique Subsample Rate 19.35%</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; Rare Features Summary (pilot, subsample, full):</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt;                X1       X2       X3      </span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; size_pilot     &quot;278&quot;    &quot;278&quot;    &quot;278&quot;   </span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; count1_pilot   &quot;43&quot;     &quot;55&quot;     &quot;61&quot;    </span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; prop_pilot     &quot;15.47%&quot; &quot;19.78%&quot; &quot;21.94%&quot;</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; coverage_pilot &quot;45.26%&quot; &quot;28.8%&quot;  &quot;12.22%&quot;</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt;                &quot;&quot;       &quot;&quot;       &quot;&quot;      </span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; size_subsample &quot;1935&quot;   &quot;1935&quot;   &quot;1935&quot;  </span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt; count1_ssp     &quot;91&quot;     &quot;186&quot;    &quot;350&quot;   </span></span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; prop_ssp       &quot;4.7%&quot;   &quot;9.61%&quot;  &quot;18.09%&quot;</span></span>
+<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt; coverage_ssp   &quot;95.79%&quot; &quot;97.38%&quot; &quot;70.14%&quot;</span></span>
+<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt;                &quot;&quot;       &quot;&quot;       &quot;&quot;      </span></span>
+<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a><span class="co">#&gt; size_full      &quot;10000&quot;  &quot;10000&quot;  &quot;10000&quot; </span></span>
+<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a><span class="co">#&gt; count1_full    &quot;95&quot;     &quot;191&quot;    &quot;499&quot;   </span></span>
+<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a><span class="co">#&gt; rare_rate      &quot;0.95%&quot;  &quot;1.91%&quot;  &quot;4.99%&quot; </span></span>
+<span id="cb6-48"><a href="#cb6-48" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-49"><a href="#cb6-49" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb6-50"><a href="#cb6-50" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-51"><a href="#cb6-51" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb6-52"><a href="#cb6-52" tabindex="-1"></a><span class="co">#&gt; Intercept   0.4720     0.0580  8.1360  &lt;0.0001</span></span>
+<span id="cb6-53"><a href="#cb6-53" tabindex="-1"></a><span class="co">#&gt; X1          0.6529     0.2598  2.5129   0.0120</span></span>
+<span id="cb6-54"><a href="#cb6-54" tabindex="-1"></a><span class="co">#&gt; X2          0.6327     0.1914  3.3056   0.0009</span></span>
+<span id="cb6-55"><a href="#cb6-55" tabindex="-1"></a><span class="co">#&gt; X3          0.5875     0.1284  4.5764  &lt;0.0001</span></span>
+<span id="cb6-56"><a href="#cb6-56" tabindex="-1"></a><span class="co">#&gt; X4          0.5602     0.0574  9.7554  &lt;0.0001</span></span>
+<span id="cb6-57"><a href="#cb6-57" tabindex="-1"></a><span class="co">#&gt; X5          0.5358     0.0623  8.5930  &lt;0.0001</span></span></code></pre></div>
+<p>As recommended by <code>survey::svyglm</code>, when working with
+binomial models, it is advisable to use use
+<code>family=quasibinomial()</code> to avoid a warning issued by
+<code>glm</code>. Refer to <a href="https://www.rdocumentation.org/packages/survey/versions/4.4-2/topics/svyglm">svyglm()
+help documentation Details</a>. The ‘quasi’ version of the family
+objects provide the same point estimates.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

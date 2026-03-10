@@ -12,7 +12,7 @@
 
 
 
-<title>Introduction to ssp.glm: Subsampling for Generalized Linear Models</title>
+<title>ssp.glm: Subsampling for Generalized Linear Models</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -359,8 +359,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Introduction to <code>ssp.glm</code>:
-Subsampling for Generalized Linear Models</h1>
+<h1 class="title toc-ignore"><code>ssp.glm</code>: Subsampling for
+Generalized Linear Models</h1>
 
 
 
@@ -534,13 +534,13 @@ with different configurations.</p>
 <span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
 <span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error z value Pr(&gt;|z|)</span></span>
-<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; Intercept  -0.5876     0.0867 -6.7749  &lt;0.0001</span></span>
-<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; V1         -0.4725     0.1053 -4.4865  &lt;0.0001</span></span>
-<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; V2         -0.5252     0.1109 -4.7357  &lt;0.0001</span></span>
-<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; V3         -0.4789     0.1037 -4.6193  &lt;0.0001</span></span>
-<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; V4         -0.6400     0.1090 -5.8705  &lt;0.0001</span></span>
-<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; V5         -0.4937     0.1155 -4.2737  &lt;0.0001</span></span>
-<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; V6         -0.6226     0.1125 -5.5368  &lt;0.0001</span></span></code></pre></div>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; Intercept  -0.5876     0.1328 -4.4249  &lt;0.0001</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; V1         -0.4725     0.1623 -2.9120   0.0036</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; V2         -0.5252     0.1699 -3.0915   0.0020</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; V3         -0.4789     0.1629 -2.9389   0.0033</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; V4         -0.6400     0.1688 -3.7926   0.0001</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; V5         -0.4937     0.1785 -2.7658   0.0057</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; V6         -0.6226     0.1739 -3.5805   0.0003</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>ssp.results <span class="ot">&lt;-</span> <span class="fu">ssp.glm</span>(<span class="at">formula =</span> formula,</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                       <span class="at">data =</span> data,</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                       <span class="at">n.plt =</span> n.plt,</span>
@@ -572,13 +572,13 @@ with different configurations.</p>
 <span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
 <span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error z value Pr(&gt;|z|)</span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; Intercept  -0.5052     0.0775 -6.5171  &lt;0.0001</span></span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; V1         -0.4788     0.0992 -4.8288  &lt;0.0001</span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; V2         -0.4893     0.0985 -4.9662  &lt;0.0001</span></span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; V3         -0.4037     0.0997 -4.0485  &lt;0.0001</span></span>
-<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; V4         -0.6308     0.0988 -6.3844  &lt;0.0001</span></span>
-<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; V5         -0.5781     0.1029 -5.6208  &lt;0.0001</span></span>
-<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; V6         -0.4679     0.1001 -4.6747  &lt;0.0001</span></span></code></pre></div>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; Intercept  -0.5052     0.0837 -6.0334  &lt;0.0001</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; V1         -0.4788     0.1063 -4.5052  &lt;0.0001</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; V2         -0.4893     0.1048 -4.6680  &lt;0.0001</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; V3         -0.4037     0.1060 -3.8079   0.0001</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; V4         -0.6308     0.1059 -5.9588  &lt;0.0001</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; V5         -0.5781     0.1091 -5.3012  &lt;0.0001</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; V6         -0.4679     0.1085 -4.3133  &lt;0.0001</span></span></code></pre></div>
 <p>As recommended by <code>survey::svyglm</code>, when working with
 binomial models, it is advisable to use use
 <code>family=quasibinomial()</code> to avoid a warning issued by
@@ -591,9 +591,10 @@ objects provide the same point estimates.</p>
 results and indices of the drawn subsample in the full dataset.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">names</span>(ssp.results)</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;model.call&quot;            &quot;coef.plt&quot;              &quot;coef.ssp&quot;             </span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;coef&quot;                  &quot;cov.ssp&quot;               &quot;cov&quot;                  </span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;index.plt&quot;             &quot;index&quot;                 &quot;N&quot;                    </span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [10] &quot;subsample.size.expect&quot; &quot;terms&quot;</span></span></code></pre></div>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;coef&quot;                  &quot;cov.plt&quot;               &quot;cov.ssp&quot;              </span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;cov&quot;                   &quot;index.plt&quot;             &quot;index&quot;                </span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [10] &quot;N&quot;                     &quot;subsample.size.expect&quot; &quot;comp.time&quot;            </span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [13] &quot;terms&quot;</span></span></code></pre></div>
 <p>Some key returned variables:</p>
 <ul>
 <li><p><code>index.plt</code> and <code>index</code> are the row indices

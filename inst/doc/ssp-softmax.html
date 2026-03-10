@@ -12,7 +12,7 @@
 
 
 
-<title>Introduction to ssp.softmax: Subsampling for Softmax (Multinomial) Regression Model</title>
+<title>ssp.softmax: Subsampling for Softmax (Multinomial) Regression Model</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -359,8 +359,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Introduction to <code>ssp.softmax</code>:
-Subsampling for Softmax (Multinomial) Regression Model</h1>
+<h1 class="title toc-ignore"><code>ssp.softmax</code>: Subsampling for
+Softmax (Multinomial) Regression Model</h1>
 
 
 
@@ -486,7 +486,7 @@ replacement, using the specified subsampling probability.
 <code>poisson</code> stands for drawing subsamples one by one by
 comparing the subsampling probability with a realization of uniform
 random variable <span class="math inline">\(U(0,1)\)</span>. The
-expected number of drawed samples are <span class="math inline">\(n.ssp\)</span>.</p>
+expected number of drawn samples are <span class="math inline">\(n.ssp\)</span>.</p>
 </div>
 <div id="likelihood" class="section level3">
 <h3><code>likelihood</code></h3>
@@ -582,7 +582,7 @@ accepted by <code>nnet::multinom</code> can be passed through
 <p><code>summary(ssp.results1)</code> shows that it draws 600
 observations out of 10000, where the number of unique indices is less
 than 600 since we use <code>sampling.method = &#39;withReplacement&#39;</code>.
-After fitting softmax model on subsample using the choosen
+After fitting softmax model on subsample using the chosen
 <code>weighted</code> likelihood function, we get coefficients
 estimation and standard errors as above.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>ssp.results2 <span class="ot">&lt;-</span> <span class="fu">ssp.softmax</span>(<span class="at">formula =</span> formula,</span>

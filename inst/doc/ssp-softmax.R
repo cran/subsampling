@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -26,7 +26,7 @@ data <- as.data.frame(cbind(Y, X))
 colnames(data) <- c("Y", paste("V", 1:ncol(X), sep=""))
 head(data)
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  ssp.softmax(
 #    formula,
 #    data,

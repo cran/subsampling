@@ -1,9 +1,9 @@
 ---
-title: "Introduction to `ssp.quantreg`: Subsampling for Quantile Regression"
+title: "`ssp.quantreg`: Subsampling for Quantile Regression"
 output: rmarkdown::html_vignette
 bibliography: references.bib
 vignette: >
-  %\VignetteIndexEntry{Introduction to `ssp.quantreg`: Subsampling for Quantile Regression}
+  %\VignetteIndexEntry{`ssp.quantreg`: Subsampling for Quantile Regression}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -129,7 +129,7 @@ $U(0,1)$. The expected number of drawn samples are $n.ssp$.
 ### `likelihood`
 
 The available choice for `likelihood` in `ssp.quantreg` is `weighted`. It takes
-the inverse of sampling probabblity as the weights in likelihood function to
+the inverse of sampling probability as the weights in likelihood function to
 correct the bias introduced by unequal subsampling probabilities.
 
 ### `boot` and `B`
